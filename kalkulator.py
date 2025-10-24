@@ -1,0 +1,144 @@
+<!doctype html>
+
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Kalkulator Sederhana</title>
+  <style>
+    :root{font-family:system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial}
+    body{display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#f3f4f6}
+    .calculator{width:320px;background:white;border-radius:12px;box-shadow:0 8px 24px rgba(2,6,23,.12);padding:18px}
+    .display{height:64px;background:#101828;color:#e6eef8;border-radius:8px;display:flex;align-items:center;justify-content:flex-end;padding:12px;font-size:28px;overflow:hidden}
+    .keys{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px}
+    button{height:56px;border-radius:10px;border:0;font-size:18px;cursor:pointer}
+    button.op{background:#f97316;color:white}
+    button.equal{grid-column:span 2;background:#2563eb;color:white}
+    button.gray{background:#e6e9ee}
+    .wide{grid-column:span 2}
+  </style>
+</head>
+<body>
+  <div class="calculator" role="application" aria-label="Kalkulator Sederhana">
+    <div id="display" class="display">0</div><div class="keys">
+  <button class="gray" data-action="clear">C</button>
+  <button class="gray" data-action="plusminus">±</button>
+  <button class="gray" data-action="percent">%</button>
+  <button class="op" data-action="/">÷</button>
+
+  <button data-number="7">7</button>
+  <button data-number="8">8</button>
+  <button data-number="9">9</button>
+  <button class="op" data-action="*">×</button>
+
+  <button data-number="4">4</button>
+  <button data-number="5">5</button>
+  <button data-number="6">6</button>
+  <button class="op" data-action="-">−</button>
+
+  <button data-number="1">1</button>
+  <button data-number="2">2</button>
+  <button data-number="3">3</button>
+  <button class="op" data-action="+">+</button>
+
+  <button class="wide" data-number="0">0</button>
+  <button data-number=".">.</button>
+  <button class="equal" data-action="=">=</button>
+</div>
+
+  </div>  <script>
+    (function(){
+      const display = document.getElementById('display');
+      let first = null, operator = null, waitingForSecond = false;
+
+      function updateDisplay(text){
+        display.textContent = String(text).slice(0,18);
+      }
+
+      function inputDigit(d){
+        if(waitingForSecond){
+          updateDisplay(d);
+          waitingForSecond = false;
+        } else {
+          updateDisplay(display.textContent === '0' ? d : display.textContent + d);
+        }
+      }
+
+      function inputDot(){
+        if(waitingForSecond){
+          updateDisplay('0.');
+          waitingForSecond = false;
+          return;
+        }
+        if(!display.textContent.includes('.')){
+          updateDisplay(display.textContent + '.');
+        }
+      }
+
+      function clearAll(){ first = null; operator = null; waitingForSecond = false; updateDisplay('0'); }
+
+      function toggleSign(){ updateDisplay(String(parseFloat(display.textContent) * -1)); }
+
+      function percent(){ updateDisplay(String(parseFloat(display.textContent) / 100)); }
+
+      function performCalculation(nextOperator){
+        const inputValue = parseFloat(display.textContent);
+        if(first === null){
+          first = inputValue;
+        } else if(operator){
+          const result = compute(first, inputValue, operator);
+          first = result;
+          updateDisplay(result);
+        }
+        operator = nextOperator;
+        waitingForSecond = true;
+      }
+
+      function compute(a,b,op){
+        switch(op){
+          case '+': return +(a + b).toPrecision(12);
+          case '-': return +(a - b).toPrecision(12);
+          case '*': return +(a * b).toPrecision(12);
+          case '/': return b === 0 ? 'Error' : +(a / b).toPrecision(12);
+        }
+        return b;
+      }
+
+      document.querySelector('.keys').addEventListener('click', (e)=>{
+        const target = e.target;
+        if(target.dataset.number !== undefined){
+          if(target.dataset.number === '.') inputDot(); else inputDigit(target.dataset.number);
+          return;
+        }
+        const action = target.dataset.action;
+        if(!action) return;
+        if(action === 'clear') clearAll();
+        else if(action === 'plusminus') toggleSign();
+        else if(action === 'percent') percent();
+        else if(action === '='){
+          performCalculation(null);
+          operator = null;
+          waitingForSecond = false;
+          first = null;
+        } else {
+          performCalculation(action);
+        }
+      });
+
+      // Keyboard support
+      window.addEventListener('keydown',(ev)=>{
+        const key = ev.key;
+        if(/^[0-9]$/.test(key)) inputDigit(key);
+        else if(key === '.') inputDot();
+        else if(key === 'Enter' || key === '='){
+          performCalculation(null); operator = null; waitingForSecond = false; first = null;
+        } else if(key === '+'||key === '-'||key === '*'||key === '/') performCalculation(key);
+        else if(key === 'Backspace'){
+          const cur = display.textContent;
+          updateDisplay(cur.length > 1 ? cur.slice(0,-1) : '0');
+        } else if(key.toLowerCase() === 'c') clearAll();
+      });
+
+    })();
+  </script></body>
+</html>
